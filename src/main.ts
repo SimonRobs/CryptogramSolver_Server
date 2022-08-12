@@ -1,19 +1,33 @@
 import { exec, execFile } from 'child_process';
-import { createServer } from 'http';
 import { Server, Socket } from 'socket.io';
-import { APP_URL, PORT } from './constants';
+import express from 'express';
+import cors from "cors";
+import path from "path";
 import SocketMessages from './enums/SocketMessages';
 import EncryptedLetter from './models/EncryptedLetter';
 import EncryptedWord from './models/EncryptedWord';
 
 const CRYPTOGRAM_FILE = 'cryptogram.txt';
 
-const httpServer = createServer();
-const io = new Server(httpServer, {
-    cors: {
-                        origin: `${APP_URL}:4200`,
-    },
-});
+const PORT = process.env.PORT || 3000;
+const INDEX = '/index.html';
+
+const server = express()
+
+.use(cors())
+.use(express.static(path.join(__dirname, "../bin/main.js")))
+.use(express.json())
+.use(function (req, res, next) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept"
+  );
+  next();
+})
+  .listen(PORT, () => console.log(`Listening on ${PORT}`));
+
+const io = new Server(server);
 
 io.on('connection', (socket: Socket) => {
     socket.on(SocketMessages.CRYPTOGRAM, (words: EncryptedWord[]) => {
@@ -31,7 +45,7 @@ io.on('connection', (socket: Socket) => {
       });
 
       child.on('exit', ()=> {
-        const c = execFile('./../CryptogramSolver', ['../words.txt', `${CRYPTOGRAM_FILE}`]);
+        const c = execFile('./algorithm/solver', [`${CRYPTOGRAM_FILE}`]);
 
 c.stdout!.on('data', (data)=>
 
@@ -41,4 +55,3 @@ c.stdout!.on('data', (data)=>
     });
 });
 
-httpServer.listen(PORT);
