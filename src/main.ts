@@ -7,7 +7,7 @@ import EncryptedLetter from './models/EncryptedLetter';
 import EncryptedWord from './models/EncryptedWord';
 import { config } from 'dotenv';
 
-const CRYPTOGRAM_FILE = 'cryptogram.txt';
+const WORDS_FILE = 'words.txt';
 
 config({
   path: path.resolve(__dirname, `../${process.env.NODE_ENV}.env`)
@@ -33,23 +33,13 @@ const io = new Server(server, {
 
 io.on('connection', (socket: Socket) => {
   socket.on(SocketMessages.CRYPTOGRAM, (words: EncryptedWord[]) => {
-
     const byValue = (letter: EncryptedLetter) => letter.value === '' ? '_' : letter.value;
     const byKey = (letter: EncryptedLetter) => letter.key === '' ? '_' : letter.key;
     const values = words.map((word: EncryptedWord) => word.letters.map(byValue).join('')).join(' ');
     const keys = words.map((word: EncryptedWord) => word.letters.map(byKey).join('')).join(' ');
-    const cryptogram = `${values}\n${keys}`;
-
-    const child = exec(`echo "${cryptogram}" > ${CRYPTOGRAM_FILE}`, (error, stdout, stderr) => {
-      if (error) {
-        throw error;
-      }
-    });
-
-    child.on('exit', () => {
-      const c = execFile('./algorithm/solver', [values, keys]);
-      c.stdout!.on('data', (data) => socket.emit(SocketMessages.ANSWER, data))
-    })
+    const wordsFile = path.join(__dirname, `../algorithm/${WORDS_FILE}`);
+    const solverProc = execFile('./algorithm/solver', [wordsFile, values, keys]);
+    solverProc.stdout!.on('data', (data) => socket.emit(SocketMessages.ANSWER, data))
   });
 });
 
