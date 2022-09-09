@@ -1,6 +1,7 @@
 enum SocketMessages {
-    CRYPTOGRAM='cryptogram',
-    ANSWER='answer',
+    CRYPTOGRAM = 'cryptogram',
+    ANSWER = 'answer',
+    DONE = 'done',
 }
 
-export default SocketMessages
+export default SocketMessages;
