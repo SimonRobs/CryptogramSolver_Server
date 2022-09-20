@@ -5,7 +5,7 @@
         "build": "tsc",
         "start": "export NODE_ENV=production && node ./bin/main.js",
         "dev": "export NODE_ENV=development && ts-node ./src/main.ts",
-        "test": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register 'tests/**/*.ts'"
+        "test": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register './**/*.spec.ts'"
     },
     "description": "Cryptogram Solver Server",
     "main": "src/main.ts",
