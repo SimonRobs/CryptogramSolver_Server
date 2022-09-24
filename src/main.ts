@@ -1,4 +1,4 @@
-import { exec, execFile } from 'child_process';
+import { ChildProcess, exec, execFile } from 'child_process';
 import { Server, Socket } from 'socket.io';
 import express from 'express';
 import path from 'path';
@@ -33,6 +33,8 @@ const io = new Server(server, {
 });
 
 io.on('connection', (socket: Socket) => {
+    let solverProc: ChildProcess | undefined = undefined;
+
     socket.on(SocketMessages.CRYPTOGRAM, (words: EncryptedWord[]) => {
         const byValue = (letter: EncryptedLetter) =>
             letter.value === '' ? '_' : letter.value;
@@ -44,15 +46,20 @@ io.on('connection', (socket: Socket) => {
         const keys = words
             .map((word: EncryptedWord) => word.letters.map(byKey).join(''))
             .join(' ');
+
+        console.log('Received values: ' + values);
+        console.log('Received keys: ' + keys);
+
         const wordsFile = path.join(__dirname, `../algorithm/${WORDS_FILE}`);
-        const solverProc = execFile('./algorithm/solver', [
-            wordsFile,
-            values,
-            keys,
-        ]);
+        solverProc = execFile('./algorithm/solver', [wordsFile, values, keys]);
         solverProc.stdout!.on('data', (data) =>
             socket.emit(SocketMessages.ANSWER, data)
         );
         solverProc.on('close', () => socket.emit(SocketMessages.DONE));
+    });
+
+    socket.on(SocketMessages.CANCEL, () => {
+        const success = solverProc?.kill();
+        console.log('Process Killed: ' + success);
     });
 });
