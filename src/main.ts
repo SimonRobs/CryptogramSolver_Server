@@ -59,8 +59,11 @@ io.on('connection', (socket: Socket) => {
         }, 5000);
 
         solverProc.stdout!.on('data', (data) => {
-            clearTimeout(timeoutTimer);
-            socket.emit(SocketMessages.ANSWER, data);
+            const results = data.split('\n');
+            results.pop();
+            results.forEach((res: string) =>
+                socket.emit(SocketMessages.ANSWER, res)
+            );
         });
 
         solverProc.on('close', () => {
