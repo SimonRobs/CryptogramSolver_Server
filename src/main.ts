@@ -47,19 +47,30 @@ io.on('connection', (socket: Socket) => {
             .map((word: EncryptedWord) => word.letters.map(byKey).join(''))
             .join(' ');
 
-        console.log('Received values: ' + values);
-        console.log('Received keys: ' + keys);
+        console.info('Received values: ' + values);
+        console.info('Received keys: ' + keys);
 
         const wordsFile = path.join(__dirname, `../algorithm/${WORDS_FILE}`);
         solverProc = execFile('./algorithm/solver', [wordsFile, values, keys]);
-        solverProc.stdout!.on('data', (data) =>
-            socket.emit(SocketMessages.ANSWER, data)
-        );
-        solverProc.on('close', () => socket.emit(SocketMessages.DONE));
+
+        const timeoutTimer = setTimeout(() => {
+            solverProc?.kill();
+            socket.emit(SocketMessages.TIMEOUT);
+        }, 5000);
+
+        solverProc.stdout!.on('data', (data) => {
+            clearTimeout(timeoutTimer);
+            socket.emit(SocketMessages.ANSWER, data);
+        });
+
+        solverProc.on('close', () => {
+            clearTimeout(timeoutTimer);
+            socket.emit(SocketMessages.DONE);
+        });
     });
 
     socket.on(SocketMessages.CANCEL, () => {
         const success = solverProc?.kill();
-        console.log('Process Killed: ' + success);
+        console.info('Process Killed: ' + success);
     });
 });
