@@ -13,7 +13,7 @@ config({
     path: path.resolve(__dirname, `../${process.env.NODE_ENV}.env`),
 });
 const HOST = process.env.HOST || 'localhost';
-const PORT = process.env.PORT || 4444;
+const PORT = process.env.PORT || 443;
 
 const expressConfig = express().use(express.json());
 
